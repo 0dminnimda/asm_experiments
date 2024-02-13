@@ -151,7 +151,7 @@ number_from_string:  ; rdi buff, rsi buff_length, returns rax number
 
 
 string_from_number:  ; rax number, rdi buff, rsi characters written
-    push rax
+    push rax rdx rcx
 
     mov rsi, 0
 
@@ -202,7 +202,7 @@ string_from_number:  ; rax number, rdi buff, rsi characters written
     pop r9 r8
 
   string_from_number_end:
-    pop rax
+    pop rcx rdx rax
 
     ret
 
