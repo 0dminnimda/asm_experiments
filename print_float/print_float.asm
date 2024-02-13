@@ -28,20 +28,43 @@ include 'library.asm'
 
 segment readable executable
 
+
+get_double_decompossion:  ; rax input with float loaded, rax output mantissa, rbx output sign, rdx output exponent
+    ; get sign - long >> 63
+    push rax
+    shr rax, 63
+    mov rbx, rax
+    pop rax
+
+    ; get exponent - ((long >> 52) & 0x7ff) - 1023 - 52
+    push rax
+    shr rax, 52
+    and rax, 0x7ff
+    sub rax, 1075  ; - 1023 - 52
+    mov rdx, rax
+    pop rax
+
+    ; get mantissa - 0x10000000000000 + (as_long & 0xfffffffffffff)
+    and rax, qword [get_double_decompossion_mantissa_and]
+    add rax, qword [get_double_decompossion_mantissa_one]
+
+    ret
+
+
 entry main
 main:
-    print_str enter_a_number, enter_a_number_length
-
-    call read_int
-
-    print_str got_number_from_string, got_number_from_string_length
-
-    call print_int
-
-    call factorial
+    mov rax, [flt]
+    call get_double_decompossion
 
     print_str calculation_result, calculation_result_length
+    call print_int
 
+    print_str calculation_result, calculation_result_length
+    mov rax, rdx
+    call print_int
+
+    print_str calculation_result, calculation_result_length
+    mov rax, rbx
     call print_int
 
     exit 0
@@ -58,5 +81,8 @@ segment readable writable
     calculation_result_length = $-calculation_result
 
     flt dq 3.14
+
+    get_double_decompossion_mantissa_and dq 0xfffffffffffff
+    get_double_decompossion_mantissa_one dq 0x10000000000000
 
 ; display/i $pc
