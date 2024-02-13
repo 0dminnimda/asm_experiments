@@ -109,15 +109,16 @@ print_int:  ; rax number input
 
 
 print_signed_int:  ; rax number input
-    is_positive rax, print_signed_int_positive
+    push rax rdi rsi
 
-    print_str _library_minus, _library_minus_length
+    lea rdi, [_library_number_string_buffer]
+    call string_from_signed_int
 
-    negate_2s_complement rax
+    mov [_library_number_string_buffer + rsi], endl
+    inc rsi
+    print_str _library_number_string_buffer, rsi
 
-  print_signed_int_positive:
-
-    call print_int
+    pop rsi rdi rax
 
     ret
 
@@ -231,6 +232,29 @@ string_from_int:  ; rax number, rdi buff, rsi characters written
 
   string_from_int_end:
     pop rcx rdx rax
+
+    ret
+
+
+string_from_signed_int:  ; rax number, rdi buff, rsi characters written
+    is_positive rax, string_from_signed_int_positive
+
+    negate_2s_complement rax
+
+    push rdi
+
+    mov byte [rdi], '-'
+    inc rdi
+    call string_from_int
+    inc rsi
+
+    pop rdi
+
+    ret
+
+  string_from_signed_int_positive:
+
+    call string_from_int
 
     ret
 
