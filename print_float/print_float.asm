@@ -19,14 +19,76 @@ include 'library.asm'
 ;   m * 5^|exp| can easily be excede the 64 bit dword, it would go up to 2550 bit number
 ;   so it's not possible to just multiply those numbers, we have do to some kind of long multiplication
 ; else:
-;   result = s * m * 10*p * 2^|exp|
-;   here we already have only integer multiplication and nice powers of 10
+;   result = s * m * 2^|exp| and . and zeroes
+;   here we already have only integer multiplication
 ;   unfortunately m * 2^|exp| still can be too big to fit into 64 bit dword
 ;   the same problem as before, we have to do some kind of long multiplication
 ; to get the float 
 
+; for the reference glib uses gmp library
+; SEE: https://github.com/bminor/glibc/blob/master/stdio-common/printf_fp.c
+; overall it seems like if we want the full and raw number we have to use arbitary precision arithmetic
+
 
 segment readable executable
+
+
+high_bits_of_mul_by_powers_of_5:  ; rax input with number, rbx input with power, rax output with result
+    push rbx rcx rdx
+
+  high_bits_of_mul_by_powers_of_5_loop:
+    test rbx, rbx
+    jz high_bits_of_mul_by_powers_of_5_loop_end
+
+    cmp rax, [high_bits_of_mul_by_powers_of_5_threshold]  ; if number > (1 << 61)
+    jb high_bits_of_mul_by_powers_of_5_no_threshold
+
+    ; rax - Dividend
+    mov rdx, 0 ; High order bits of the dividend
+    mov rcx, 10 ; Divisor
+    idiv rcx    ; Perform the division
+
+  high_bits_of_mul_by_powers_of_5_no_threshold:
+
+    imul rax, 5
+
+    dec rbx
+    jmp high_bits_of_mul_by_powers_of_5_loop
+
+  high_bits_of_mul_by_powers_of_5_loop_end:
+
+    pop rdx rcx rbx
+
+    ret
+
+
+high_bits_of_mul_by_powers_of_2:  ; rax input with number, rbx input with power, rax output with result
+    push rbx rcx rdx
+
+  high_bits_of_mul_by_powers_of_2_loop:
+    test rbx, rbx
+    jz high_bits_of_mul_by_powers_of_2_loop_end
+
+    cmp rax, [high_bits_of_mul_by_powers_of_2_threshold]  ; if number > (1 << 63)
+    jb high_bits_of_mul_by_powers_of_2_no_threshold
+
+    ; rax - Dividend
+    mov rdx, 0 ; High order bits of the dividend
+    mov rcx, 10 ; Divisor
+    idiv rcx    ; Perform the division
+
+  high_bits_of_mul_by_powers_of_2_no_threshold:
+
+    add rax, rax
+
+    dec rbx
+    jmp high_bits_of_mul_by_powers_of_2_loop
+
+  high_bits_of_mul_by_powers_of_2_loop_end:
+
+    pop rdx rcx rbx
+
+    ret
 
 
 get_double_decompossion:  ; rax input with float loaded, rax output mantissa, rbx output sign, rdx output exponent
@@ -44,7 +106,7 @@ get_double_decompossion:  ; rax input with float loaded, rax output mantissa, rb
     mov rdx, rax
     pop rax
 
-    ; get mantissa - 0x10000000000000 + (as_long & 0xfffffffffffff)
+    ; get mantissa - 0x10000000000000 + (long & 0xfffffffffffff)
     and rax, qword [get_double_decompossion_mantissa_and]
     add rax, qword [get_double_decompossion_mantissa_one]
 
@@ -53,18 +115,29 @@ get_double_decompossion:  ; rax input with float loaded, rax output mantissa, rb
 
 entry main
 main:
-    mov rax, [flt]
-    call get_double_decompossion
-
-    print_str calculation_result, calculation_result_length
+    mov rax, [tsts]
+    mov rbx, 7
+    call high_bits_of_mul_by_powers_of_5
     call print_int
 
-    print_str calculation_result, calculation_result_length
-    mov rax, rdx
-    call print_signed_int
+    mov rax, [tsts]
+    mov rbx, 51
+    call high_bits_of_mul_by_powers_of_5
+    call print_int
 
-    print_str calculation_result, calculation_result_length
-    mov rax, rbx
+    mov rax, [tsts]
+    mov rbx, 1023
+    call high_bits_of_mul_by_powers_of_5
+    call print_int
+
+    mov rax, [tsts]
+    mov rbx, 1023
+    call high_bits_of_mul_by_powers_of_2
+    call print_int
+
+    mov rax, [tsts2]
+    mov rbx, 429
+    call high_bits_of_mul_by_powers_of_2
     call print_int
 
     exit 0
@@ -80,10 +153,18 @@ segment readable writable
     calculation_result db 'Calculation result: '
     calculation_result_length = $-calculation_result
 
-    flt dq 3.14
+    flt dq -3.14
     ; flt dq 123345456457123345456457123345456457.5
+    ; flt dq 1e145
+
+    tsts dq 7070651414971679
+    tsts2 dq 7213264545145106
 
     get_double_decompossion_mantissa_and dq 0xfffffffffffff
     get_double_decompossion_mantissa_one dq 0x10000000000000
+
+    high_bits_of_mul_by_powers_of_5_threshold dq 2305843009213693952
+    high_bits_of_mul_by_powers_of_2_threshold dq 9223372036854775808
+
 
 ; display/i $pc
