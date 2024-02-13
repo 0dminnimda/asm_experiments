@@ -76,6 +76,20 @@ macro print_str buffer, length
 }
 
 
+macro is_positive thing, target
+{
+    test thing, thing
+    jg target
+}
+
+
+macro negate_2s_complement thing
+{
+    not thing
+    inc thing
+}
+
+
 segment readable executable
 
 
@@ -83,13 +97,27 @@ print_int:  ; rax number input
     push rax rdi rsi
 
     lea rdi, [_library_number_string_buffer]
-    call string_from_number
+    call string_from_int
 
     mov [_library_number_string_buffer + rsi], endl
     inc rsi
     print_str _library_number_string_buffer, rsi
 
     pop rsi rdi rax
+
+    ret
+
+
+print_signed_int:  ; rax number input
+    is_positive rax, print_signed_int_positive
+
+    print_str _library_minus, _library_minus_length
+
+    negate_2s_complement rax
+
+  print_signed_int_positive:
+
+    call print_int
 
     ret
 
@@ -101,14 +129,14 @@ read_int:  ; rax number output
 
     lea rdi, [_library_buff]
     mov rsi, rax
-    call number_from_string
+    call int_from_string
 
     pop rsi rdi
 
     ret
 
 
-number_from_string:  ; rdi buff, rsi buff_length, returns rax number
+int_from_string:  ; rdi buff, rsi buff_length, returns rax number
     push rsi
 
     mov rax, 0  ; result
@@ -116,23 +144,23 @@ number_from_string:  ; rdi buff, rsi buff_length, returns rax number
     mov rcx, 1  ; 10's powers
 
     cmp rsi, 0
-    je number_from_string_end_reading
+    je int_from_string_end_reading
 
     push rbx rcx
 
-  number_from_string_read_one_digit:
+  int_from_string_read_one_digit:
     dec rsi
 
     movzx rbx, byte [rdi + rsi]
 
     cmp rbx, 0
-    je number_from_string_read_one_digit
+    je int_from_string_read_one_digit
 
     cmp rbx, endl
-    je number_from_string_read_one_digit
+    je int_from_string_read_one_digit
 
     cmp rbx, ' '
-    je number_from_string_read_one_digit
+    je int_from_string_read_one_digit
 
     sub rbx, '0'
     imul rbx, rcx
@@ -140,9 +168,9 @@ number_from_string:  ; rdi buff, rsi buff_length, returns rax number
     imul rcx, 10
 
     cmp rsi, 0
-    jne number_from_string_read_one_digit
+    jne int_from_string_read_one_digit
 
-  number_from_string_end_reading:
+  int_from_string_end_reading:
     pop rcx rbx
 
     pop rsi
@@ -150,19 +178,19 @@ number_from_string:  ; rdi buff, rsi buff_length, returns rax number
     ret
 
 
-string_from_number:  ; rax number, rdi buff, rsi characters written
+string_from_int:  ; rax number, rdi buff, rsi characters written
     push rax rdx rcx
 
     mov rsi, 0
 
     cmp rax, 0
-    jne string_from_number_main
+    jne string_from_int_main
 
     inc rsi
     mov [rdi], byte '0'
 
-    jmp string_from_number_end
-  string_from_number_main:
+    jmp string_from_int_end
+  string_from_int_main:
 
     repeat 20  ; 2^64 = 18446744073709551616
         ; rax - Dividend
@@ -176,10 +204,10 @@ string_from_number:  ; rax number, rdi buff, rsi characters written
         inc rsi
 
         cmp rax, 0
-        je string_from_number_div_end
+        je string_from_int_div_end
     end repeat
 
-  string_from_number_div_end:
+  string_from_int_div_end:
 
     push r8 r9
 
@@ -188,7 +216,7 @@ string_from_number:  ; rax number, rdi buff, rsi characters written
     mov r8, 0
     mov r9, rsi
     dec r9
-  string_from_number_flip:
+  string_from_int_flip:
 
     mov al, [rdi + r8]
     xchg al, [rdi + r9]
@@ -197,11 +225,11 @@ string_from_number:  ; rax number, rdi buff, rsi characters written
     inc r8
     dec r9
     cmp r8, r9
-    jle string_from_number_flip
+    jle string_from_int_flip
 
     pop r9 r8
 
-  string_from_number_end:
+  string_from_int_end:
     pop rcx rdx rax
 
     ret
@@ -237,3 +265,6 @@ segment readable writable
     _library_buff_length = $-_library_buff
 
     _library_number_string_buffer rb 32
+
+    _library_minus db '-'
+    _library_minus_length = $-_library_minus

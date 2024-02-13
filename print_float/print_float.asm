@@ -61,7 +61,7 @@ main:
 
     print_str calculation_result, calculation_result_length
     mov rax, rdx
-    call print_int
+    call print_signed_int
 
     print_str calculation_result, calculation_result_length
     mov rax, rbx
@@ -81,6 +81,7 @@ segment readable writable
     calculation_result_length = $-calculation_result
 
     flt dq 3.14
+    ; flt dq 123345456457123345456457123345456457.5
 
     get_double_decompossion_mantissa_and dq 0xfffffffffffff
     get_double_decompossion_mantissa_one dq 0x10000000000000
