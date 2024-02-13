@@ -32,11 +32,7 @@ entry main
 main:
     print_str enter_a_number, enter_a_number_length
 
-    input buff, buff_length
-
-    mov rdi, buff
-    mov rsi, rax
-    call number_from_string
+    call read_int
 
     print_str got_number_from_string, got_number_from_string_length
 
@@ -50,8 +46,8 @@ main:
 
     exit 0
 
-segment readable writable
 
+segment readable writable
     enter_a_number db 'Enter a number: '
     enter_a_number_length = $-enter_a_number
 
@@ -61,14 +57,6 @@ segment readable writable
     calculation_result db 'Calculation result: '
     calculation_result_length = $-calculation_result
 
-    space db ' '
-    space_length = $-space
-
-    buff rb 128
-    buff_length = $-buff
-
     flt dq 3.14
-
-    number_string_buffer rb 32
 
 ; display/i $pc

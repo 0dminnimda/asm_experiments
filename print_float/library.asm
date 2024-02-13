@@ -94,6 +94,20 @@ print_int:  ; rax number input
     ret
 
 
+read_int:  ; rax number output
+    push rdi rsi
+
+    input _library_buff, _library_buff_length
+
+    lea rdi, [_library_buff]
+    mov rsi, rax
+    call number_from_string
+
+    pop rsi rdi
+
+    ret
+
+
 number_from_string:  ; rdi buff, rsi buff_length, returns rax number
     push rsi
 
@@ -219,7 +233,7 @@ factorial:  ; rax number input and output
 
 
 segment readable writable
-    _library_buff rb 128
+    _library_buff rb 1024
     _library_buff_length = $-_library_buff
 
     _library_number_string_buffer rb 32
