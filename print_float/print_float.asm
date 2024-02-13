@@ -16,7 +16,13 @@ include 'library.asm'
 ;   now it's nice and easy, powers of 10 just move the decimal point
 ;   so we only need to learn how to put the m * 5^|exp| into string,
 ;   m is in the range [0, 2**53], 5^|exp| is in the range [0, 5**1075]
-;   m * 5^|exp| can easily be excede the 64 bit dword, so it's not possible to just multiply those numbers
+;   m * 5^|exp| can easily be excede the 64 bit dword, it would go up to 2550 bit number
+;   so it's not possible to just multiply those numbers, we have do to some kind of long multiplication
+; else:
+;   result = s * m * 10*p * 2^|exp|
+;   here we already have only integer multiplication and nice powers of 10
+;   unfortunately m * 2^|exp| still can be too big to fit into 64 bit dword
+;   the same problem as before, we have to do some kind of long multiplication
 ; to get the float 
 
 
