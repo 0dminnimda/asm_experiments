@@ -113,32 +113,66 @@ get_double_decompossion:  ; rax input with float loaded, rax output mantissa, rb
     ret
 
 
+string_from_double:  ; rax dobule bits, rdi buff, rsi characters written
+    push rdi rax rbx rdx
+
+    mov rsi, 0
+
+    call get_double_decompossion
+
+    test rbx, rbx  ; is sign negative (!= 0)?
+    jz string_from_double_handled_sign
+
+    mov byte [rdi + rsi], '-'
+    inc rdi
+    inc rsi
+
+  string_from_double_handled_sign:
+
+    is_positive rdx, string_from_double_positive_exp
+
+    mov rbx, rdx
+    negate_2s_complement rbx  ; abs(exp), here we are in the negative branch
+    call high_bits_of_mul_by_powers_of_5
+
+    jmp string_from_double_handled_exp
+  string_from_double_positive_exp:
+
+    mov rbx, rdx
+    call high_bits_of_mul_by_powers_of_2
+    neg rbx
+
+  string_from_double_handled_exp:
+
+    push rsi
+    call string_from_int
+    pop rdx
+    add rsi, rdx
+
+    pop rdx rbx rax rdi
+
+    ret
+
+
+print_dobule:  ; rax input dobule bits
+    push rax rdi rsi
+
+    lea rdi, [_library_number_string_buffer]
+    call string_from_double
+
+    mov [_library_number_string_buffer + rsi], endl
+    inc rsi
+    print_str _library_number_string_buffer, rsi
+
+    pop rsi rdi rax
+
+    ret
+
+
 entry main
 main:
-    mov rax, [tsts]
-    mov rbx, 7
-    call high_bits_of_mul_by_powers_of_5
-    call print_int
-
-    mov rax, [tsts]
-    mov rbx, 51
-    call high_bits_of_mul_by_powers_of_5
-    call print_int
-
-    mov rax, [tsts]
-    mov rbx, 1023
-    call high_bits_of_mul_by_powers_of_5
-    call print_int
-
-    mov rax, [tsts]
-    mov rbx, 1023
-    call high_bits_of_mul_by_powers_of_2
-    call print_int
-
-    mov rax, [tsts2]
-    mov rbx, 429
-    call high_bits_of_mul_by_powers_of_2
-    call print_int
+    mov rax, [flt]
+    call print_dobule
 
     exit 0
 
@@ -156,9 +190,6 @@ segment readable writable
     flt dq -3.14
     ; flt dq 123345456457123345456457123345456457.5
     ; flt dq 1e145
-
-    tsts dq 7070651414971679
-    tsts2 dq 7213264545145106
 
     get_double_decompossion_mantissa_and dq 0xfffffffffffff
     get_double_decompossion_mantissa_one dq 0x10000000000000
