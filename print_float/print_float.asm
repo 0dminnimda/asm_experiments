@@ -1,7 +1,5 @@
 format ELF64 executable 3
 
-segment readable executable
-
 include 'library.asm'
 
 ; IEEE 754 floating point format for double is:
@@ -21,6 +19,8 @@ include 'library.asm'
 ;   m * 5^|exp| can easily be excede the 64 bit dword, so it's not possible to just multiply those numbers
 ; to get the float 
 
+
+segment readable executable
 
 entry main
 main:

@@ -76,15 +76,18 @@ macro print_str buffer, length
 }
 
 
+segment readable executable
+
+
 print_int:  ; rax number input
     push rax rdi rsi
 
-    lea rdi, [number_string_buffer]
+    lea rdi, [_library_number_string_buffer]
     call string_from_number
 
-    mov [number_string_buffer + rsi], endl
+    mov [_library_number_string_buffer + rsi], endl
     inc rsi
-    print_str number_string_buffer, rsi
+    print_str _library_number_string_buffer, rsi
 
     pop rsi rdi rax
 
@@ -213,3 +216,10 @@ factorial:  ; rax number input and output
 
   factorial_end:
     ret
+
+
+segment readable writable
+    _library_buff rb 128
+    _library_buff_length = $-_library_buff
+
+    _library_number_string_buffer rb 32
